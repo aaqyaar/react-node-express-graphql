@@ -35,14 +35,6 @@ schema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// schema.methods.generateAuthToken = function () {
-//   const token = jwt.sign(
-//     { _id: this._id, name: this.name, email: this.email },
-//     config.get('jwtPrivateKey')
-//   );
-//   return token;
-// };
-
 // encrypt password
 schema.methods.encryptPassword = function (password) {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);

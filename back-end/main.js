@@ -1,12 +1,20 @@
 const express = require("express");
 const logger = require("morgan");
 const app = express();
+const cors = require("cors");
 const connectDB = require("./src/config/db");
 require("dotenv").config();
 
 // Connect Database
 connectDB();
 
+// cors
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
 // Init Middleware
 app.use(express.json());
 app.use(express.json({ extended: false }));
