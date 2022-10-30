@@ -1,46 +1,16 @@
 const {
-  GraphQLBoolean,
   GraphQLObjectType,
   GraphQLID,
   GraphQLList,
   GraphQLSchema,
-  GraphQLString,
-  GraphQLFloat,
-  GraphQLNonNull,
 } = require("graphql");
-const { JSON_WEB_TOKEN } = require("../config/jwt");
+
 // const { users, expenses } = require("../sampleData");
 const Expense = require("../models/expenses");
 const User = require("../models/users");
-
-const expenseType = new GraphQLObjectType({
-  name: "Expense",
-  fields: () => ({
-    id: { type: GraphQLID },
-    description: { type: GraphQLString },
-    amount: { type: GraphQLFloat },
-    category: { type: GraphQLString },
-    isRecurring: { type: GraphQLBoolean },
-    createdBy: { type: GraphQLString },
-  }),
-});
-
-const userType = new GraphQLObjectType({
-  name: "User",
-  fields: () => ({
-    id: { type: GraphQLID },
-    email: { type: GraphQLString },
-    name: { type: GraphQLString },
-    phone: { type: GraphQLString },
-    password: { type: GraphQLString },
-    expenses: {
-      type: new GraphQLList(expenseType),
-      resolve(parent, args) {
-        return Expense.find({ createdBy: parent.id });
-      },
-    },
-  }),
-});
+// graphql schema
+const { expenseType, addExpense } = require("../graphql/expense");
+const { userType, addUser, updateUser, login } = require("../graphql/users");
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
@@ -83,105 +53,13 @@ const mutation = new GraphQLObjectType({
   name: "Mutation",
   fields: {
     // add expense mutation
-    addExpense: {
-      type: expenseType,
-      args: {
-        description: { type: new GraphQLNonNull(GraphQLString) },
-        amount: { type: new GraphQLNonNull(GraphQLFloat) },
-        category: { type: new GraphQLNonNull(GraphQLString) },
-        isRecurring: { type: new GraphQLNonNull(GraphQLBoolean) },
-        createdBy: { type: new GraphQLNonNull(GraphQLString) },
-      },
-      resolve(parent, args) {
-        let expense = new Expense({
-          description: args.description,
-          amount: args.amount,
-          category: args.category,
-          isRecurring: args.isRecurring,
-          createdBy: args.createdBy,
-        });
-        return expense.save();
-      },
-    },
-
+    addExpense,
     // add user mutation
-    addUser: {
-      type: userType,
-      args: {
-        email: { type: new GraphQLNonNull(GraphQLString) },
-        name: { type: new GraphQLNonNull(GraphQLString) },
-        phone: { type: new GraphQLNonNull(GraphQLString) },
-        password: { type: new GraphQLNonNull(GraphQLString) },
-        expenses: { type: GraphQLID },
-      },
-      resolve(parent, args) {
-        let user = new User({
-          email: args.email,
-          name: args.name,
-          phone: args.phone,
-          password: args.password,
-          expenses: args.expenses,
-        });
-        return user.save();
-      },
-    },
-
+    addUser,
     // update user mutation
-
-    updateUser: {
-      type: userType,
-      args: {
-        id: { type: new GraphQLNonNull(GraphQLID) },
-        email: { type: GraphQLString },
-        name: { type: GraphQLString },
-        phone: { type: GraphQLString },
-        password: { type: GraphQLString },
-        expenses: { type: GraphQLID },
-      },
-      async resolve(parent, args) {
-        const user = await User.findById(args.id).exec();
-        if (!user) {
-          throw new Error("User not found");
-        }
-        const hashedPassword = await user.encryptPassword(args.password);
-
-        const updated = await user.updateOne({
-          email: args.email,
-          name: args.name,
-          phone: args.phone,
-          password: hashedPassword,
-          expenses: args.expenses,
-        });
-        return { updated, message: "User updated successfully" };
-      },
-    },
-
+    updateUser,
     // login mutation
-    login: {
-      type: userType,
-      args: {
-        email: { type: new GraphQLNonNull(GraphQLString) },
-        password: { type: new GraphQLNonNull(GraphQLString) },
-      },
-      async resolve(parent, args) {
-        const user = await User.findOne({ email: args.email }).exec();
-        if (!user) {
-          throw new Error("User not found");
-        }
-        if (user && (await user.matchPassword(args.password))) {
-          const token = JSON_WEB_TOKEN.generateToken(user._id);
-          const { password, ...userWithoutPassword } = user.toObject();
-          const response = {
-            ...userWithoutPassword,
-            token,
-            message: "User logged in successfully",
-          };
-          return response;
-        } else {
-          throw new Error("Invalid email or password");
-        }
-      },
-    },
+    login,
   },
 });
 
