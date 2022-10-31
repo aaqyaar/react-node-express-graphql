@@ -1,6 +1,5 @@
 import { useQuery } from "@apollo/client";
-import UserTableRow from "components/UserTableRow";
-import Spinner from "components/Spinner";
+import { UserTableRow, Spinner } from "components";
 import { GET_USERS } from "graphql/queries/userQueries";
 
 export default function Users() {
